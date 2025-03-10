@@ -8,7 +8,7 @@
     <link href="../assets/css/style.css" rel="stylesheet">
 </head>
 <body>
-    <?php include '../includes/header.php'; ?>
+    <?php include '../includes/header_employee.php'; ?>
     <div class="container mt-5">
         <h2 class="text-center mb-4">Employee Dashboard</h2>
         <div class="row">

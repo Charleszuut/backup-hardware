@@ -10,7 +10,7 @@ if (!isset($_SESSION['user'])) {
 
 // Check if the user is an admin
 function isAdmin() {
-    return isset($_SESSION['role']) && $_SESSION['role'] === 'admin';
+    return isset($_SESSION['role']) && $_SESSION['role'] === 'Admin';
 }
 
 // Check if the user is an employee

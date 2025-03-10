@@ -18,3 +18,12 @@ body {
 footer {
     margin-top: 50px;
 }
+
+.dropdown-menu {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+
+

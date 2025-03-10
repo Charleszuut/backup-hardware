@@ -13,39 +13,45 @@ include '../includes/db.php';
     <link href="../assets/css/style.css" rel="stylesheet">
 </head>
 <body>
-    <?php include '../includes/header.php'; ?>
+    <?php include '../includes/header_employee.php'; ?>
     <div class="container mt-5">
         <h2 class="text-center mb-4">Employee History</h2>
         <table class="table table-bordered">
             <thead>
                 <tr>
                     <th>ID</th>
-                    <th>Customer</th>
-                    <th>Product</th>
-                    <th>Quantity</th>
-                    <th>Total</th>
+                    <th>Employee Name</th>
+                    <th>Role</th>
+                    <th>Action Taken</th>
                     <th>Date</th>
+                    <th>Notes</th>
                 </tr>
             </thead>
             <tbody>
                 <?php
-                $sql = "SELECT po.PurchaseOrderID, c.CustomerName, p.ProductName, po.OrderQuantity, po.TotalPrice, po.CreatedDate
-                        FROM PurchaseOrder po
-                        JOIN Customer c ON po.CustomerID = c.CustomerID
-                        JOIN Products p ON po.ProductID = p.ProductID
-                        WHERE po.Status='Completed'";
+                // Fetch all employee history records
+                $sql = "SELECT eh.HistoryID, e.EmpFName, e.EmpLName, e.EmpPos, eh.ActionTaken, eh.ActionDate, eh.Notes
+                        FROM EmployeeHistory eh
+                        JOIN Employee e ON eh.EmpID = e.EmpID";
                 $result = $conn->query($sql);
-                while ($row = $result->fetch_assoc()):
+
+                if ($result->num_rows > 0) {
+                    while ($row = $result->fetch_assoc()):
                 ?>
-                    <tr>
-                        <td><?php echo $row['PurchaseOrderID']; ?></td>
-                        <td><?php echo $row['CustomerName']; ?></td>
-                        <td><?php echo $row['ProductName']; ?></td>
-                        <td><?php echo $row['OrderQuantity']; ?></td>
-                        <td>₱<?php echo number_format($row['TotalPrice'], 2); ?></td>
-                        <td><?php echo $row['CreatedDate']; ?></td>
-                    </tr>
-                <?php endwhile; ?>
+                        <tr>
+                            <td><?php echo $row['HistoryID']; ?></td>
+                            <td><?php echo $row['EmpFName'] . ' ' . $row['EmpLName']; ?></td>
+                            <td><?php echo $row['EmpPos']; ?></td>
+                            <td><?php echo $row['ActionTaken']; ?></td>
+                            <td><?php echo $row['ActionDate']; ?></td>
+                            <td><?php echo $row['Notes']; ?></td>
+                        </tr>
+                <?php
+                    endwhile;
+                } else {
+                    echo "<tr><td colspan='6' class='text-center'>No history found.</td></tr>";
+                }
+                ?>
             </tbody>
         </table>
     </div>

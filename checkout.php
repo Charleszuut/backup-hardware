@@ -2,38 +2,73 @@
 session_start();
 include 'includes/db.php';
 
+// Redirect if the cart is empty
 if (!isset($_SESSION['cart']) || empty($_SESSION['cart'])) {
     header('Location: index.php');
     exit();
 }
 
+// Process the checkout form
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $customer_name = $_POST['customer_name'];
     $customer_address = $_POST['customer_address'];
 
-    // Insert customer without OrderID
-    $sql = "INSERT INTO Customer (CustomerName, CustomerAddress) VALUES ('$customer_name', '$customer_address')";
-    if ($conn->query($sql)) {
-        $customer_id = $conn->insert_id;
+    // Insert customer into the Customer table
+    $sql = "INSERT INTO Customer (CustomerName, CustomerAddress) VALUES (?, ?)";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("ss", $customer_name, $customer_address);
+
+    if ($stmt->execute()) {
+        $customer_id = $stmt->insert_id;
+
+        // Calculate total price
+        $total_price = 0;
+        foreach ($_SESSION['cart'] as $item) {
+            $total_price += $item['price'] * $item['quantity'];
+        }
 
         // Insert purchase order
-        $total = 0;
-        foreach ($_SESSION['cart'] as $item) {
-            $total += $item['price'];
-        }
+        $sql = "INSERT INTO PurchaseOrder (CustomerID, TotalPrice, Status) VALUES (?, ?, 'Pending')";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("id", $customer_id, $total_price);
 
-        $sql = "INSERT INTO PurchaseOrder (OrderQuantity, ProductID, CustomerID, CustomerAddress, TotalPrice)
-                VALUES (1, {$item['product_id']}, $customer_id, '$customer_address', $total)";
-        if ($conn->query($sql)) {
+        if ($stmt->execute()) {
+            $purchase_order_id = $stmt->insert_id;
+
+            // Insert purchase order lines
+            foreach ($_SESSION['cart'] as $item) {
+                $product_name = $item['product_name']; // Assuming product_name is passed from the cart
+                $quantity = $item['quantity'];
+                $unit_price = $item['price'];
+                $total_item_price = $unit_price * $quantity;
+
+                // Check if supplier_id is provided
+                if (!isset($item['supplierid'])) {
+                    die("Error: Supplier ID is missing for product: $product_name");
+                }
+                $supplierid = $item['supplierid'];
+
+                // Insert into PurchaseOrderLine
+                $sql = "INSERT INTO PurchaseOrderLine (PurchaseOrderID, ProductName, Quantity, UnitPrice, TotalPrice, SupplierID)
+                        VALUES (?, ?, ?, ?, ?, ?)";
+                $stmt = $conn->prepare($sql);
+                $stmt->bind_param("isiddi", $purchase_order_id, $product_name, $quantity, $unit_price, $total_item_price, $supplierid);
+
+                if (!$stmt->execute()) {
+                    die("Error inserting purchase order line: " . $stmt->error);
+                }
+            }
+
             // Clear the cart
             $_SESSION['cart'] = [];
-            header('Location: index.php');
+            echo "<p>Your order has been placed.</p>";
+            header('Location: transactions.php');
             exit();
         } else {
-            $error = "Error creating purchase order: " . $conn->error;
+            die("Error creating purchase order: " . $stmt->error);
         }
     } else {
-        $error = "Error registering customer: " . $conn->error;
+        die("Error registering customer: " . $stmt->error);
     }
 }
 ?>
@@ -47,12 +82,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <link href="assets/css/style.css" rel="stylesheet">
 </head>
 <body>
-    <?php include 'includes/header.php'; ?>
+    <?php include 'includes/header_index.php'; ?>
     <div class="container mt-5">
         <h2 class="text-center mb-4">Checkout</h2>
-        <?php if (isset($error)): ?>
-            <div class="alert alert-danger"><?php echo $error; ?></div>
-        <?php endif; ?>
         <form method="POST">
             <div class="mb-3">
                 <label for="customer_name" class="form-label">Full Name</label>

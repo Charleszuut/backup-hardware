@@ -7,22 +7,22 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
                 <li class="nav-item">
-                    <a class="nav-link" href="admin/dashboard.php">Dashboard</a>
+                    <a class="nav-link" href="../admin/dashboard.php">Dashboard</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="admin/products.php">Manage Products</a>
+                    <a class="nav-link" href="../admin/products.php">Manage Products</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="admin/transactions.php">Transactions</a>
+                    <a class="nav-link" href="../admin/transactions.php">Transactions</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="admin/history.php">History</a>
+                    <a class="nav-link" href="../admin/history.php">History</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="admin/register_employee.php">Register Employee</a>
+                    <a class="nav-link" href="../admin/register_employee.php">Register Employee</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="PHP-HARDWARE-SYSTEM/logout.php">Logout</a>
+                    <a class="nav-link" href="../logout.php">Logout</a>
                 </li>
             </ul>
         </div>

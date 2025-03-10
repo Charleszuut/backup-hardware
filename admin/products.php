@@ -3,7 +3,6 @@ session_start();
 include '../includes/auth.php';
 include '../includes/db.php';
 
-// Add Product
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_product'])) {
     $name = $_POST['name'];
     $category = $_POST['category'];
@@ -11,12 +10,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_product'])) {
     $unitCost = $_POST['unitCost'];
     $price = $_POST['price'];
 
-    // Use the InsertProduct stored procedure
     $sql = "CALL InsertProduct('$name', '$category', '$unit', $unitCost, $price)";
     $conn->query($sql);
 }
 
-// Delete Product
+
 if (isset($_GET['delete'])) {
     $id = $_GET['delete'];
     $sql = "DELETE FROM Products WHERE ProductID=$id";
@@ -32,7 +30,7 @@ if (isset($_GET['delete'])) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
-    <?php include '../includes/header.php'; ?>
+    <?php include '../includes/header_admin.php'; ?>
     <div class="container mt-5">
         <h2 class="text-center mb-4">Manage Products</h2>
         <form method="POST" class="mb-4">

@@ -13,7 +13,7 @@ include '../includes/db.php';
     <link href="../assets/css/style.css" rel="stylesheet">
 </head>
 <body>
-    <?php include '../includes/header.php'; ?>
+    <?php include '../includes/header_admin.php'; ?>
     <div class="container mt-5">
         <h2 class="text-center mb-4">Admin Transactions</h2>
         <table class="table table-bordered">

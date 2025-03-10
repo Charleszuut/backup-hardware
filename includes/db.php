@@ -1,6 +1,6 @@
 <?php
 $host = 'localhost';
-$db = 'market'; // Use the 'market' database
+$db = 'market';
 $user = 'root';
 $pass = '';
 

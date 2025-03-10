@@ -13,7 +13,7 @@ include '../includes/db.php';
     <link href="../assets/css/style.css" rel="stylesheet">
 </head>
 <body>
-    <?php include '../includes/header.php'; ?>
+    <?php include '../includes/header_employee.php'; ?>
     <div class="container mt-5">
         <h2 class="text-center mb-4">Employee Transactions</h2>
         <table class="table table-bordered">
@@ -25,26 +25,39 @@ include '../includes/db.php';
                     <th>Quantity</th>
                     <th>Total</th>
                     <th>Status</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 <?php
-                $sql = "SELECT po.PurchaseOrderID, c.CustomerName, p.ProductName, po.OrderQuantity, po.TotalPrice, po.Status
+                // Fetch all purchase orders with customer and product details
+                $sql = "SELECT po.PurchaseOrderID, c.CustomerName, pol.ProductName, pol.Quantity, pol.TotalPrice, po.Status
                         FROM PurchaseOrder po
                         JOIN Customer c ON po.CustomerID = c.CustomerID
-                        JOIN Products p ON po.ProductID = p.ProductID";
+                        JOIN PurchaseOrderLine pol ON po.PurchaseOrderID = pol.PurchaseOrderID";
                 $result = $conn->query($sql);
-                while ($row = $result->fetch_assoc()):
+
+                if ($result->num_rows > 0) {
+                    while ($row = $result->fetch_assoc()):
                 ?>
-                    <tr>
-                        <td><?php echo $row['PurchaseOrderID']; ?></td>
-                        <td><?php echo $row['CustomerName']; ?></td>
-                        <td><?php echo $row['ProductName']; ?></td>
-                        <td><?php echo $row['OrderQuantity']; ?></td>
-                        <td>₱<?php echo number_format($row['TotalPrice'], 2); ?></td>
-                        <td><?php echo $row['Status']; ?></td>
-                    </tr>
-                <?php endwhile; ?>
+                        <tr>
+                            <td><?php echo $row['PurchaseOrderID']; ?></td>
+                            <td><?php echo $row['CustomerName']; ?></td>
+                            <td><?php echo $row['ProductName']; ?></td>
+                            <td><?php echo $row['Quantity']; ?></td>
+                            <td>₱<?php echo number_format($row['TotalPrice'], 2); ?></td>
+                            <td><?php echo $row['Status']; ?></td>
+                            <td>
+                                <a href="update_order.php?id=<?php echo $row['PurchaseOrderID']; ?>" class="btn btn-warning btn-sm">Update</a>
+                                <a href="delete_order.php?id=<?php echo $row['PurchaseOrderID']; ?>" class="btn btn-danger btn-sm">Delete</a>
+                            </td>
+                        </tr>
+                <?php
+                    endwhile;
+                } else {
+                    echo "<tr><td colspan='7' class='text-center'>No transactions found.</td></tr>";
+                }
+                ?>
             </tbody>
         </table>
     </div>

@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <link href="../assets/css/style.css" rel="stylesheet">
 </head>
 <body>
-    <?php include '../includes/header.php'; ?>
+    <?php include '../includes/header_admin.php'; ?>
     <div class="container mt-5">
         <h2 class="text-center mb-4">Register Employee</h2>
         <?php if (isset($success)): ?>

@@ -36,10 +36,10 @@ $result = $conn->query($sql);
                             <p class="card-text"><?php echo $row['ProductCategory']; ?></p>
                             <p class="text-success fw-bold">₱<?php echo number_format($row['Price'], 2); ?></p>
                             <form action="cart.php" method="POST">
-                                <input type="hidden" name="product_id" value="<?php echo $row['ProductID']; ?>">
-                                <input type="hidden" name="product_name" value="<?php echo $row['ProductName']; ?>">
-                                <input type="hidden" name="price" value="<?php echo $row['Price']; ?>">
-                                <button type="submit" class="btn btn-primary w-100">Add to Cart</button>
+                            <input type="hidden" name="product_id" value="<?php echo $row['ProductID']; ?>">
+                            <input type="hidden" name="product_name" value="<?php echo $row['ProductName']; ?>">
+                            <input type="hidden" name="price" value="<?php echo $row['Price']; ?>">
+                            <button type="submit" class="btn btn-primary w-100">Add to Cart</button>    
                             </form>
                         </div>
                     </div>
