@@ -94,6 +94,7 @@ if (!isset($_SESSION['cart']) || empty($_SESSION['cart'])) {
             </tbody>
         </table>
         <div class="text-center">
+            <a href="index.php" class="btn btn-secondary">Back to Shop</a>
             <a href="checkout.php" class="btn btn-success">Proceed to Checkout</a>
         </div>
     </div>

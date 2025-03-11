@@ -144,31 +144,41 @@ $suppliers = getSuppliers($conn);
             <div class="alert alert-danger"><?php echo htmlspecialchars($error); ?></div>
         <?php endif; ?>
 
-        <!-- Employee List -->
-        <h3 class="text-center mt-5">Employees</h3>
-        <button class="btn btn-primary mb-3" onclick="openAddEmployeeModal()">Add Employee</button>
-        <table class="table table-bordered">
-            <thead class="table-dark"><tr><th>ID</th><th>Name</th><th>Username</th><th>Role</th><th>Phone</th><th>Status</th><th>Actions</th></tr></thead>
-            <tbody>
-                <?php foreach ($employees as $employee): ?>
-                    <tr>
-                        <td><?= $employee['EmpID'] ?></td>
-                        <td><?= $employee['EmpFName'] . ' ' . $employee['EmpLName'] ?></td>
-                        <td><?= $employee['Username'] ?></td>
-                        <td><?= $employee['Role'] ?></td>
-                        <td><?= $employee['Phone'] ?></td>
-                        <td><?= $employee['IsActive'] ? 'Active' : 'Inactive' ?></td>
-                        <td>
-                            <button class="btn btn-warning btn-sm" onclick="editEmployee(<?= htmlspecialchars(json_encode($employee)) ?>)">Edit</button>
-                            <form method="POST" style="display:inline;">
-                                <input type="hidden" name="empID" value="<?= $employee['EmpID'] ?>">
-                                <button type="submit" name="delete_employee" class="btn btn-danger btn-sm">Delete</button>
-                            </form>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
+       <!-- Employee List -->
+<h3 class="text-center mt-5">Employees</h3>
+<button class="btn btn-primary mb-3" onclick="openAddEmployeeModal()">Add Employee</button>
+<table class="table table-bordered">
+    <thead class="table-dark">
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Username</th>
+            <th>Role</th> <!-- Corrected: Role column -->
+            <th>Phone</th> <!-- Corrected: Phone column -->
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        <?php foreach ($employees as $employee): ?>
+            <tr>
+                <td><?= $employee['EmpID'] ?></td>
+                <td><?= $employee['EmpFName'] . ' ' . $employee['EmpLName'] ?></td>
+                <td><?= $employee['Username'] ?></td>
+                <td><?= $employee['Role'] ?></td> <!-- Corrected: Role data -->
+                <td><?= $employee['Phone'] ?></td> <!-- Corrected: Phone data -->
+                <td><?= $employee['IsActive'] ? 'Active' : 'Inactive' ?></td>
+                <td>
+                    <button class="btn btn-warning btn-sm" onclick="editEmployee(<?= htmlspecialchars(json_encode($employee)) ?>)">Edit</button>
+                    <form method="POST" style="display:inline;">
+                        <input type="hidden" name="empID" value="<?= $employee['EmpID'] ?>">
+                        <button type="submit" name="delete_employee" class="btn btn-danger btn-sm">Delete</button>
+                    </form>
+                </td>
+            </tr>
+        <?php endforeach; ?>
+    </tbody>
+</table>
 
 <!-- Supplier List -->
 <h3 class="text-center mt-5">Suppliers</h3>

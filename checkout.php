@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
             // Insert purchase order lines
             foreach ($_SESSION['cart'] as $item) {
-                $product_name = $item['product_name']; // Assuming product_name is passed from the cart
+                $product_name = $item['product_name'];
                 $quantity = $item['quantity'];
                 $unit_price = $item['price'];
                 $total_item_price = $unit_price * $quantity;
@@ -61,7 +61,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
             // Clear the cart
             $_SESSION['cart'] = [];
-            echo "<p>Your order has been placed.</p>";
             header('Location: transactions.php');
             exit();
         } else {

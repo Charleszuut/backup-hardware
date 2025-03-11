@@ -3,6 +3,10 @@ session_start();
 include '../includes/auth.php';
 include '../includes/db.php';
 
+// Fetch suppliers from the database
+$supplierQuery = "SELECT SupplierID, SupplierName FROM Supplier";
+$supplierResult = $conn->query($supplierQuery);
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_product'])) {
     $name = $_POST['name'];
     $category = $_POST['category'];
@@ -10,10 +14,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_product'])) {
     $unit = $_POST['unit'];
     $unitCost = $_POST['unitCost'];
     $price = $_POST['price'];
+    $supplierID = $_POST['supplier']; // Get the selected supplier ID
+
     if (empty($unitType)) {
         echo "Unit type is required.";
     } else {
-        $sql = "CALL InsertProduct('$name', '$category', '$unitType', '$unit', $unitCost, $price)";
+        // Update the SQL query to include SupplierID
+        $sql = "CALL InsertProduct('$name', '$category', '$unitType', '$unit', $unitCost, $price, $supplierID)";
         $conn->query($sql);
     }
 }
@@ -57,7 +64,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_product'])) {
                                     <option value="Equipment">Equipment</option>
                                 </select>
                             </div>
-                            <!-- Unit Type Dropdown -->
                             <div class="mb-3">
                                 <label for="unitType" class="form-label">Unit of Measurement Type</label>
                                 <select class="form-select" id="unitType" name="unitType" required onchange="toggleUnitInput()">
@@ -66,23 +72,28 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_product'])) {
                                     <option value="Weight">Weight</option>
                                 </select>
                             </div>
-
-                            <!-- Unit Measurement Input (visible depending on the selected unit type) -->
                             <div class="mb-3" id="unitInputContainer" style="display:none;">
                                 <label for="unit" class="form-label">Unit (e.g., pcs, kg)</label>
                                 <input type="text" class="form-control" id="unit" name="unit" placeholder="Unit of Measurement (e.g., pcs, kg)" required>
                             </div>
-
-                            <!-- Unit Cost Input -->
                             <div class="mb-3">
                                 <label for="unitCost" class="form-label">Unit Cost</label>
                                 <input type="number" class="form-control" id="unitCost" name="unitCost" placeholder="Unit Cost" step="0.01" required>
                             </div>
-
-                            <!-- Price Input -->
                             <div class="mb-3">
                                 <label for="price" class="form-label">Price</label>
                                 <input type="number" class="form-control" id="price" name="price" placeholder="Price" step="0.01" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="supplier" class="form-label">Supplier</label>
+                                <select class="form-select" id="supplier" name="supplier" required>
+                                    <option value="" disabled selected>Select Supplier</option>
+                                    <?php while ($supplier = $supplierResult->fetch_assoc()): ?>
+                                        <option value="<?php echo $supplier['SupplierID']; ?>">
+                                            <?php echo $supplier['SupplierName']; ?>
+                                        </option>
+                                    <?php endwhile; ?>
+                                </select>
                             </div>
                             <div class="modal-footer">
                                 <button type="submit" class="btn btn-primary" name="add_product">Add Product</button>
@@ -105,13 +116,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_product'])) {
                     <th>Unit</th>
                     <th>Unit Cost</th>
                     <th>Price</th>
+                    <th>Supplier</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 <?php
-                // Fetch products from the database
-                $sql = "SELECT * FROM Products";
+                // Fetch products with supplier information
+                $sql = "SELECT p.*, s.SupplierName 
+                        FROM Products p 
+                        LEFT JOIN Supplier s ON p.SupplierID = s.SupplierID";
                 $result = $conn->query($sql);
                 while ($row = $result->fetch_assoc()):
                 ?>
@@ -123,6 +137,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_product'])) {
                         <td><?php echo $row['UnitofMeasurement']; ?></td>
                         <td>₱<?php echo number_format($row['UnitCost'], 2); ?></td>
                         <td>₱<?php echo number_format($row['Price'], 2); ?></td>
+                        <td><?php echo $row['SupplierName']; ?></td>
                         <td>
                             <a href="edit_product.php?id=<?php echo $row['ProductID']; ?>" class="btn btn-sm btn-warning">Edit</a>
                             <a href="?delete=<?php echo $row['ProductID']; ?>" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">Delete</a>
