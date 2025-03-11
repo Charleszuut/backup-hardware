@@ -30,29 +30,47 @@ function getSuppliers($conn) {
 
 $success = $error = "";
 
-// Add or Update Employee
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save_employee'])) {
-    $empID = $_POST['empID'] ?? null;
+// Add Employee
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_employee'])) {
     $empFName = $_POST['empFName'];
     $empLName = $_POST['empLName'];
     $username = $_POST['username'];
     $password = $_POST['password'];
     $role = $_POST['role'];
     $phone = $_POST['phone'];
+    $isActive = $_POST['isActive'];
     $empPos = 'Employee';
+    
+    $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
 
-    if ($empID) {
-        // Update Employee
-        $stmt = $conn->prepare("UPDATE employee SET EmpFName=?, EmpLName=?, Username=?, Role=?, Phone=? WHERE EmpID=?");
-        $stmt->bind_param("sssssi", $empFName, $empLName, $username, $role, $phone, $empID);
-    } else {
-        // Add Employee
-        $stmt = $conn->prepare("CALL InsertEmployee(?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("ssssss", $empFName, $empLName, $empPos, $username, $password, $phone);
-    }
+    // Add Employee
+    $stmt = $conn->prepare("CALL InsertEmployee(?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $stmt->bind_param("ssssssisi", $empFName, $empLName, $empPos, $username, $hashedPassword, $role, $phone, $isActive, $_SESSION['user_id']);
     
     if ($stmt->execute()) {
-        $success = "Employee saved successfully!";
+        $success = "Employee added successfully!";
+    } else {
+        $error = "Error: " . $conn->error;
+    }
+    $stmt->close();
+}
+
+// Update Employee
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['edit_employee'])) {
+    $empID = $_POST['empID'];
+    $empFName = $_POST['empFName'];
+    $empLName = $_POST['empLName'];
+    $username = $_POST['username'];
+    $role = $_POST['role'];
+    $phone = $_POST['phone'];
+    $isActive = $_POST['isActive'];
+
+    // Update Employee
+    $stmt = $conn->prepare("UPDATE employee SET EmpFName=?, EmpLName=?, Username=?, Role=?, Phone=?, IsActive=? WHERE EmpID=?");
+    $stmt->bind_param("sssssii", $empFName, $empLName, $username, $role, $phone, $isActive, $empID);
+    
+    if ($stmt->execute()) {
+        $success = "Employee updated successfully!";
     } else {
         $error = "Error: " . $conn->error;
     }
@@ -128,9 +146,9 @@ $suppliers = getSuppliers($conn);
 
         <!-- Employee List -->
         <h3 class="text-center mt-5">Employees</h3>
-        <button class="btn btn-primary mb-3" onclick="openModal('employeeModal')">Add Employee</button>
+        <button class="btn btn-primary mb-3" onclick="openAddEmployeeModal()">Add Employee</button>
         <table class="table table-bordered">
-            <thead class="table-dark"><tr><th>ID</th><th>Name</th><th>Username</th><th>Role</th><th>Phone</th><th>Actions</th></tr></thead>
+            <thead class="table-dark"><tr><th>ID</th><th>Name</th><th>Username</th><th>Role</th><th>Phone</th><th>Status</th><th>Actions</th></tr></thead>
             <tbody>
                 <?php foreach ($employees as $employee): ?>
                     <tr>
@@ -139,6 +157,7 @@ $suppliers = getSuppliers($conn);
                         <td><?= $employee['Username'] ?></td>
                         <td><?= $employee['Role'] ?></td>
                         <td><?= $employee['Phone'] ?></td>
+                        <td><?= $employee['IsActive'] ? 'Active' : 'Inactive' ?></td>
                         <td>
                             <button class="btn btn-warning btn-sm" onclick="editEmployee(<?= htmlspecialchars(json_encode($employee)) ?>)">Edit</button>
                             <form method="POST" style="display:inline;">
@@ -151,31 +170,221 @@ $suppliers = getSuppliers($conn);
             </tbody>
         </table>
 
-        <!-- Supplier List -->
-        <h3 class="text-center mt-5">Suppliers</h3>
-        <button class="btn btn-success mb-3" onclick="openModal('supplierModal')">Add Supplier</button>
-        <table class="table table-bordered">
-            <thead class="table-dark"><tr><th>ID</th><th>Name</th><th>Address</th><th>Phone</th><th>Actions</th></tr></thead>
-            <tbody>
-                <?php foreach ($suppliers as $supplier): ?>
-                    <tr>
-                        <td><?= $supplier['SupplierID'] ?></td>
-                        <td><?= $supplier['SupplierName'] ?></td>
-                        <td><?= $supplier['SupplierAddress'] ?></td>
-                        <td><?= $supplier['SupplierNo'] ?></td>
-                        <td>
-                            <button class="btn btn-warning btn-sm" onclick="editSupplier(<?= htmlspecialchars(json_encode($supplier)) ?>)">Edit</button>
-                            <form method="POST" style="display:inline;">
-                                <input type="hidden" name="supplierID" value="<?= $supplier['SupplierID'] ?>">
-                                <button type="submit" name="delete_supplier" class="btn btn-danger btn-sm">Delete</button>
-                            </form>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
+<!-- Supplier List -->
+<h3 class="text-center mt-5">Suppliers</h3>
+<button class="btn btn-success mb-3" onclick="openAddSupplierModal()">Add Supplier</button>
+<table class="table table-bordered">
+    <thead class="table-dark"><tr><th>ID</th><th>Name</th><th>Address</th><th>Phone</th><th>Actions</th></tr></thead>
+    <tbody>
+        <?php foreach ($suppliers as $supplier): ?>
+            <tr>
+                <td><?= $supplier['SupplierID'] ?></td>
+                <td><?= $supplier['SupplierName'] ?></td>
+                <td><?= $supplier['SupplierAddress'] ?></td>
+                <td><?= $supplier['SupplierNo'] ?></td>
+                <td><button class="btn btn-warning btn-sm" onclick="editSupplier(<?= htmlspecialchars(json_encode($supplier)) ?>)">Edit</button>
+                    <form method="POST" style="display:inline;">
+                        
+                        <input type="hidden" name="supplierID" value="<?= $supplier['SupplierID'] ?>">
+                        
+                        <button type="submit" name="delete_supplier" class="btn btn-danger btn-sm">Delete</button>
+                    </form>
+                </td>
+            </tr>
+        <?php endforeach; ?>
+    </tbody>
+</table>
+
+    <!-- Add Employee Modal -->
+    <div class="modal fade" id="addEmployeeModal" tabindex="-1" aria-labelledby="addEmployeeModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addEmployeeModalLabel">Add Employee</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="POST" id="addEmployeeForm">
+                        <div class="mb-3">
+                            <label for="empFName" class="form-label">First Name</label>
+                            <input type="text" class="form-control" id="empFName" name="empFName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="empLName" class="form-label">Last Name</label>
+                            <input type="text" class="form-control" id="empLName" name="empLName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="role" class="form-label">Role</label>
+                            <input type="text" class="form-control" id="role" name="role" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="phone" class="form-label">Phone</label>
+                            <input type="text" class="form-control" id="phone" name="phone" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="isActive" class="form-label">Status</label>
+                            <select class="form-select" id="isActive" name="isActive" required>
+                                <option value="1">Active</option>
+                                <option value="0">Inactive</option>
+                            </select>
+                        </div>
+                        <button type="submit" name="add_employee" class="btn btn-primary">Add Employee</button>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 
+    <!-- Edit Employee Modal -->
+    <div class="modal fade" id="editEmployeeModal" tabindex="-1" aria-labelledby="editEmployeeModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editEmployeeModalLabel">Edit Employee</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="POST" id="editEmployeeForm">
+                        <input type="hidden" name="empID" id="editEmpID">
+                        <div class="mb-3">
+                            <label for="editEmpFName" class="form-label">First Name</label>
+                            <input type="text" class="form-control" id="editEmpFName" name="empFName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editEmpLName" class="form-label">Last Name</label>
+                            <input type="text" class="form-control" id="editEmpLName" name="empLName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editUsername" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="editUsername" name="username" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editRole" class="form-label">Role</label>
+                            <input type="text" class="form-control" id="editRole" name="role" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editPhone" class="form-label">Phone</label>
+                            <input type="text" class="form-control" id="editPhone" name="phone" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editIsActive" class="form-label">Status</label>
+                            <select class="form-select" id="editIsActive" name="isActive" required>
+                                <option value="1">Active</option>
+                                <option value="0">Inactive</option>
+                            </select>
+                        </div>
+                        <button type="submit" name="edit_employee" class="btn btn-primary">Save Changes</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Supplier Modal -->
+<div class="modal fade" id="addSupplierModal" tabindex="-1" aria-labelledby="addSupplierModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addSupplierModalLabel">Add Supplier</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" id="addSupplierForm">
+                    <div class="mb-3">
+                        <label for="supplierName" class="form-label">Supplier Name</label>
+                        <input type="text" class="form-control" id="supplierName" name="supplierName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="supplierAddress" class="form-label">Supplier Address</label>
+                        <input type="text" class="form-control" id="supplierAddress" name="supplierAddress" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="supplierNo" class="form-label">Supplier Phone</label>
+                        <input type="text" class="form-control" id="supplierNo" name="supplierNo" required>
+                    </div>
+                    <button type="submit" name="save_supplier" class="btn btn-primary">Add Supplier</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Supplier Modal -->
+<div class="modal fade" id="editSupplierModal" tabindex="-1" aria-labelledby="editSupplierModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editSupplierModalLabel">Edit Supplier</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" id="editSupplierForm">
+                    <input type="hidden" name="supplierID" id="editSupplierID">
+                    <div class="mb-3">
+                        <label for="editSupplierName" class="form-label">Supplier Name</label>
+                        <input type="text" class="form-control" id="editSupplierName" name="supplierName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editSupplierAddress" class="form-label">Supplier Address</label>
+                        <input type="text" class="form-control" id="editSupplierAddress" name="supplierAddress" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editSupplierNo" class="form-label">Supplier Phone</label>
+                        <input type="text" class="form-control" id="editSupplierNo" name="supplierNo" required>
+                    </div>
+                    <button type="submit" name="save_supplier" class="btn btn-primary">Save Changes</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Function to open the Add Employee modal
+        function openAddEmployeeModal() {
+            const modal = new bootstrap.Modal(document.getElementById('addEmployeeModal'));
+            modal.show();
+        }
+
+        // Function to open the Edit Employee modal and populate the form
+        function editEmployee(employee) {
+            document.getElementById('editEmpID').value = employee.EmpID;
+            document.getElementById('editEmpFName').value = employee.EmpFName;
+            document.getElementById('editEmpLName').value = employee.EmpLName;
+            document.getElementById('editUsername').value = employee.Username;
+            document.getElementById('editRole').value = employee.Role;
+            document.getElementById('editPhone').value = employee.Phone;
+            document.getElementById('editIsActive').value = employee.IsActive;
+
+            const modal = new bootstrap.Modal(document.getElementById('editEmployeeModal'));
+            modal.show();
+        }
+        // Function to open the Add Supplier modal
+    function openAddSupplierModal() {
+        const modal = new bootstrap.Modal(document.getElementById('addSupplierModal'));
+        modal.show();
+    }
+
+    // Function to open the Edit Supplier modal and populate the form
+    function editSupplier(supplier) {
+        document.getElementById('editSupplierID').value = supplier.SupplierID;
+        document.getElementById('editSupplierName').value = supplier.SupplierName;
+        document.getElementById('editSupplierAddress').value = supplier.SupplierAddress;
+        document.getElementById('editSupplierNo').value = supplier.SupplierNo;
+
+        const modal = new bootstrap.Modal(document.getElementById('editSupplierModal'));
+        modal.show();
+    }
+    </script>
 </body>
 </html>
