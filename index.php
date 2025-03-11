@@ -1,10 +1,21 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 session_start();
 include 'includes/db.php';
 
-// Fetch products from the database
+// Check connection
+if (!$conn) {
+    die("Connection failed: " . mysqli_connect_error());
+}
+
+// Fetch products
 $sql = "SELECT * FROM Products";
 $result = $conn->query($sql);
+
+if (!$result) {
+    die("Query failed: " . $conn->error);
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -27,7 +38,12 @@ $result = $conn->query($sql);
     <div class="container my-5">
         <h2 class="text-center mb-4">Our Products</h2>
         <div class="row">
-            <?php while ($row = $result->fetch_assoc()): ?>
+            <?php
+            if ($result->num_rows > 0) {
+                while ($row = $result->fetch_assoc()) {
+                    // Uncomment the next line temporarily to debug column names
+                    // echo "<pre>" . print_r($row, true) . "</pre>";
+            ?>
                 <div class="col-md-4 mb-4">
                     <div class="card h-100 shadow">
                         <img src="assets/img/<?php echo $row['ProductName']; ?>.jpg" class="card-img-top" alt="<?php echo $row['ProductName']; ?>">
@@ -35,16 +51,23 @@ $result = $conn->query($sql);
                             <h5 class="card-title"><?php echo $row['ProductName']; ?></h5>
                             <p class="card-text"><?php echo $row['ProductCategory']; ?></p>
                             <p class="text-success fw-bold">₱<?php echo number_format($row['Price'], 2); ?></p>
-                            <form action="cart.php" method="POST">
-                            <input type="hidden" name="product_id" value="<?php echo $row['ProductID']; ?>">
-                            <input type="hidden" name="product_name" value="<?php echo $row['ProductName']; ?>">
-                            <input type="hidden" name="price" value="<?php echo $row['Price']; ?>">
-                            <button type="submit" class="btn btn-primary w-100">Add to Cart</button>    
+                            <form method="POST" action="cart.php">
+                                <input type="hidden" name="product_id" value="<?php echo $row['ProductID']; ?>">
+                                <input type="hidden" name="product_name" value="<?php echo $row['ProductName']; ?>">
+                                <input type="hidden" name="price" value="<?php echo $row['Price']; ?>">
+                                <input type="hidden" name="supplierid" value="<?php echo $row['SupplierID']; ?>">
+                                <input type="number" name="quantity" value="1" min="1">
+                                <button type="submit" name="add_to_cart">Add to Cart</button>
                             </form>
                         </div>
                     </div>
                 </div>
-            <?php endwhile; ?>
+            <?php
+                }
+            } else {
+                echo "<p class='text-center'>No products available at this time.</p>";
+            }
+            ?>
         </div>
     </div>
 

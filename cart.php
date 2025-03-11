@@ -8,6 +8,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['product_id'])) {
     $product_name = $_POST['product_name'];
     $price = (float)$_POST['price']; // Ensure price is a float
     $quantity = (int)$_POST['quantity']; // Ensure quantity is an integer
+    $supplierid = (int)$_POST['supplierid']; // Ensure supplierid is an integer
 
     // Ensure quantity is at least 1
     if ($quantity < 1) {
@@ -33,21 +34,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['product_id'])) {
     // If the product is not in the cart, add it
     if (!$item_exists) {
         $_SESSION['cart'][] = [
-            'product_id' => $product_id,
+            'product_id' => $product_id, // Ensure this is included
             'product_name' => $product_name,
             'price' => $price,
-            'quantity' => $quantity
+            'quantity' => $quantity,
+            'supplierid' => $supplierid
         ];
     }
 
     // Redirect to the cart page to avoid form resubmission
     header('Location: cart.php');
-    exit();
-}
-
-// Redirect if cart is empty and no form is submitted
-if (!isset($_SESSION['cart']) || empty($_SESSION['cart'])) {
-    header('Location: index.php');
     exit();
 }
 ?>
@@ -65,34 +61,36 @@ if (!isset($_SESSION['cart']) || empty($_SESSION['cart'])) {
     <div class="container mt-5">
         <h2 class="text-center mb-4">Your Cart</h2>
         <table class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>Product</th>
-                    <th>Quantity</th>
-                    <th>Price</th>
-                    <th>Total</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php
-                $total_price = 0;
-                foreach ($_SESSION['cart'] as $item):
-                    $item_total = $item['price'] * $item['quantity'];
-                    $total_price += $item_total;
-                ?>
-                    <tr>
-                        <td><?php echo $item['product_name']; ?></td>
-                        <td><?php echo $item['quantity']; ?></td>
-                        <td>₱<?php echo number_format($item['price'], 2); ?></td>
-                        <td>₱<?php echo number_format($item_total, 2); ?></td>
-                    </tr>
-                <?php endforeach; ?>
-                <tr>
-                    <td colspan="3" class="text-end fw-bold">Total</td>
-                    <td class="fw-bold">₱<?php echo number_format($total_price, 2); ?></td>
-                </tr>
-            </tbody>
-        </table>
+    <thead>
+        <tr>
+            <th>Product</th>
+            <th>Quantity</th>
+            <th>Price</th>
+            <th>Supplier</th>
+            <th>Total</th>
+        </tr>
+    </thead>
+    <tbody>
+        <?php
+        $total_price = 0;
+        foreach ($_SESSION['cart'] as $item):
+            $item_total = $item['price'] * $item['quantity'];
+            $total_price += $item_total;
+        ?>
+            <tr>
+                <td><?php echo $item['product_name']; ?></td>
+                <td><?php echo $item['quantity']; ?></td>
+                <td>₱<?php echo number_format($item['price'], 2); ?></td>
+                <td><?php echo $item['supplierid']; ?></td> <!-- Display supplierid -->
+                <td>₱<?php echo number_format($item_total, 2); ?></td>
+            </tr>
+        <?php endforeach; ?>
+        <tr>
+            <td colspan="4" class="text-end fw-bold">Total</td>
+            <td class="fw-bold">₱<?php echo number_format($total_price, 2); ?></td>
+        </tr>
+    </tbody>
+</table>
         <div class="text-center">
             <a href="index.php" class="btn btn-secondary">Back to Shop</a>
             <a href="checkout.php" class="btn btn-success">Proceed to Checkout</a>

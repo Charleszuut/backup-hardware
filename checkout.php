@@ -37,24 +37,50 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
             // Insert purchase order lines
             foreach ($_SESSION['cart'] as $item) {
+                $product_id = $item['product_id'];
                 $product_name = $item['product_name'];
                 $quantity = $item['quantity'];
                 $unit_price = $item['price'];
                 $total_item_price = $unit_price * $quantity;
+                $supplierid = isset($item['supplierid']) ? $item['supplierid'] : null;
 
-                // Check if supplier_id is provided
-                if (!isset($item['supplierid'])) {
-                    die("Error: Supplier ID is missing for product: $product_name");
+                // Check if ProductID exists in the Products table
+                $check_sql = "SELECT ProductID FROM Products WHERE ProductID = ?";
+                $check_stmt = $conn->prepare($check_sql);
+                $check_stmt->bind_param("i", $product_id);
+                $check_stmt->execute();
+                $check_stmt->store_result();
+
+                if ($check_stmt->num_rows == 0) {
+                    error_log("Invalid ProductID: $product_id");
+                    die("Error: ProductID $product_id does not exist in the Products table.");
                 }
-                $supplierid = $item['supplierid'];
+
+                // Check if SupplierID exists in the supplier table
+                if ($supplierid !== null) {
+                    $check_sql = "SELECT SupplierID FROM supplier WHERE SupplierID = ?";
+                    $check_stmt = $conn->prepare($check_sql);
+                    $check_stmt->bind_param("i", $supplierid);
+                    $check_stmt->execute();
+                    $check_stmt->store_result();
+
+                    if ($check_stmt->num_rows == 0) {
+                        error_log("Invalid SupplierID: $supplierid for ProductID: $product_id");
+                        die("Error: SupplierID $supplierid does not exist in the supplier table for ProductID $product_id.");
+                    }
+                } else {
+                    error_log("Missing SupplierID for ProductID: $product_id");
+                    die("Error: SupplierID is missing for ProductID $product_id.");
+                }
 
                 // Insert into PurchaseOrderLine
-                $sql = "INSERT INTO PurchaseOrderLine (PurchaseOrderID, ProductName, Quantity, UnitPrice, TotalPrice, SupplierID)
+                $sql = "INSERT INTO PurchaseOrderLine (PurchaseOrderID, ProductID, Quantity, UnitPrice, TotalPrice, SupplierID)
                         VALUES (?, ?, ?, ?, ?, ?)";
                 $stmt = $conn->prepare($sql);
-                $stmt->bind_param("isiddi", $purchase_order_id, $product_name, $quantity, $unit_price, $total_item_price, $supplierid);
+                $stmt->bind_param("iiiddi", $purchase_order_id, $product_id, $quantity, $unit_price, $total_item_price, $supplierid);
 
                 if (!$stmt->execute()) {
+                    error_log("Failed to insert purchase order line: " . $stmt->error);
                     die("Error inserting purchase order line: " . $stmt->error);
                 }
             }
@@ -64,9 +90,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             header('Location: transactions.php');
             exit();
         } else {
+            error_log("Failed to create purchase order: " . $stmt->error);
             die("Error creating purchase order: " . $stmt->error);
         }
     } else {
+        error_log("Failed to register customer: " . $stmt->error);
         die("Error registering customer: " . $stmt->error);
     }
 }
