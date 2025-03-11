@@ -84,6 +84,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_product'])) {
                                 <label for="price" class="form-label">Price</label>
                                 <input type="number" class="form-control" id="price" name="price" placeholder="Price" step="0.01" required>
                             </div>
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-primary" name="add_product">Add Product</button>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>
                         </form>
                     </div>
                 </div>
