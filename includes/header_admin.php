@@ -19,7 +19,7 @@
                     <a class="nav-link" href="../admin/history.php">History</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="../admin/register_employee.php">Register Employee</a>
+                    <a class="nav-link" href="../admin/register_employee.php">Employee/Supplier</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="../logout.php">Logout</a>
