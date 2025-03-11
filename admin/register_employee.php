@@ -8,7 +8,7 @@ if (!isAdmin()) {
     exit();
 }
 
-// Function to fetch all employees
+// Fetch all employees
 function getEmployees($conn) {
     $employees = [];
     $result = $conn->query("SELECT * FROM employee");
@@ -18,7 +18,7 @@ function getEmployees($conn) {
     return $employees;
 }
 
-// Function to fetch all suppliers
+// Fetch all suppliers
 function getSuppliers($conn) {
     $suppliers = [];
     $result = $conn->query("SELECT * FROM supplier");
@@ -30,32 +30,78 @@ function getSuppliers($conn) {
 
 $success = $error = "";
 
-// Register new employee
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register_employee'])) {
-    $empFName = $_POST['empFName'] ?? '';
-    $empLName = $_POST['empLName'] ?? '';
-    $username = $_POST['username'] ?? '';
-    $password = $_POST['password'] ?? '';
-    $role = $_POST['role'] ?? '';
-    $phone = $_POST['phone'] ?? '';
+// Add or Update Employee
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save_employee'])) {
+    $empID = $_POST['empID'] ?? null;
+    $empFName = $_POST['empFName'];
+    $empLName = $_POST['empLName'];
+    $username = $_POST['username'];
+    $password = $_POST['password'];
+    $role = $_POST['role'];
+    $phone = $_POST['phone'];
     $empPos = 'Employee';
 
-    $stmt = $conn->prepare("CALL InsertEmployee(?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param("ssssss", $empFName, $empLName, $empPos, $username, $password, $phone);
-    $success = $stmt->execute() ? "Employee registered successfully!" : "Error: " . $conn->error;
+    if ($empID) {
+        // Update Employee
+        $stmt = $conn->prepare("UPDATE employee SET EmpFName=?, EmpLName=?, Username=?, Role=?, Phone=? WHERE EmpID=?");
+        $stmt->bind_param("sssssi", $empFName, $empLName, $username, $role, $phone, $empID);
+    } else {
+        // Add Employee
+        $stmt = $conn->prepare("CALL InsertEmployee(?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("ssssss", $empFName, $empLName, $empPos, $username, $password, $phone);
+    }
+    
+    if ($stmt->execute()) {
+        $success = "Employee saved successfully!";
+    } else {
+        $error = "Error: " . $conn->error;
+    }
     $stmt->close();
 }
 
-// Register new supplier
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register_supplier'])) {
-    $supplierName = $_POST['supplierName'] ?? '';
-    $supplierAddress = $_POST['supplierAddress'] ?? '';
-    $supplierNo = $_POST['supplierNo'] ?? '';
-
-    $stmt = $conn->prepare("INSERT IGNORE INTO supplier (SupplierName, SupplierAddress, SupplierNo) VALUES (?, ?, ?)");
-    $stmt->bind_param("sss", $supplierName, $supplierAddress, $supplierNo);
-    $success = $stmt->execute() ? "Supplier registered successfully!" : "Error: " . $conn->error;
+// Delete Employee
+if (isset($_POST['delete_employee'])) {
+    $empID = $_POST['empID'];
+    $stmt = $conn->prepare("DELETE FROM employee WHERE EmpID=?");
+    $stmt->bind_param("i", $empID);
+    $stmt->execute();
     $stmt->close();
+    $success = "Employee deleted successfully!";
+}
+
+// Add or Update Supplier
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save_supplier'])) {
+    $supplierID = $_POST['supplierID'] ?? null;
+    $supplierName = $_POST['supplierName'];
+    $supplierAddress = $_POST['supplierAddress'];
+    $supplierNo = $_POST['supplierNo'];
+
+    if ($supplierID) {
+        // Update Supplier
+        $stmt = $conn->prepare("UPDATE supplier SET SupplierName=?, SupplierAddress=?, SupplierNo=? WHERE SupplierID=?");
+        $stmt->bind_param("sssi", $supplierName, $supplierAddress, $supplierNo, $supplierID);
+    } else {
+        // Add Supplier
+        $stmt = $conn->prepare("INSERT INTO supplier (SupplierName, SupplierAddress, SupplierNo) VALUES (?, ?, ?)");
+        $stmt->bind_param("sss", $supplierName, $supplierAddress, $supplierNo);
+    }
+
+    if ($stmt->execute()) {
+        $success = "Supplier saved successfully!";
+    } else {
+        $error = "Error: " . $conn->error;
+    }
+    $stmt->close();
+}
+
+// Delete Supplier
+if (isset($_POST['delete_supplier'])) {
+    $supplierID = $_POST['supplierID'];
+    $stmt = $conn->prepare("DELETE FROM supplier WHERE SupplierID=?");
+    $stmt->bind_param("i", $supplierID);
+    $stmt->execute();
+    $stmt->close();
+    $success = "Supplier deleted successfully!";
 }
 
 $employees = getEmployees($conn);
@@ -80,47 +126,53 @@ $suppliers = getSuppliers($conn);
             <div class="alert alert-danger"><?php echo htmlspecialchars($error); ?></div>
         <?php endif; ?>
 
-        <!-- Employee Registration -->
-        <button class="btn btn-primary w-100 mb-3" onclick="toggleForm('employeeForm')">Register Employee</button>
-        <div id="employeeForm" style="display: none;">
-            <h3>Register Employee</h3>
-            <form method="POST">
-                <input type="hidden" name="register_employee" value="1">
-                <div class="mb-3"><label>First Name</label><input type="text" class="form-control" name="empFName" required></div>
-                <div class="mb-3"><label>Last Name</label><input type="text" class="form-control" name="empLName" required></div>
-                <div class="mb-3"><label>Username</label><input type="text" class="form-control" name="username" required></div>
-                <div class="mb-3"><label>Password</label><input type="password" class="form-control" name="password" required></div>
-                <div class="mb-3"><label>Role</label><select class="form-control" name="role" required><option value="Employee">Employee</option><option value="Manager">Manager</option><option value="Admin">Admin</option></select></div>
-                <div class="mb-3"><label>Phone Number</label><input type="text" class="form-control" name="phone" required></div>
-                <button type="submit" class="btn btn-primary w-100">Register Employee</button>
-            </form>
-        </div>
-
-        <!-- Supplier Registration -->
-        <button class="btn btn-success w-100 mt-4 mb-3" onclick="toggleForm('supplierForm')">Register Supplier</button>
-        <div id="supplierForm" style="display: none;">
-            <h3>Register Supplier</h3>
-            <form method="POST">
-                <input type="hidden" name="register_supplier" value="1">
-                <div class="mb-3"><label>Supplier Name</label><input type="text" class="form-control" name="supplierName" required></div>
-                <div class="mb-3"><label>Supplier Address</label><input type="text" class="form-control" name="supplierAddress" required></div>
-                <div class="mb-3"><label>Supplier Phone</label><input type="text" class="form-control" name="supplierNo" required></div>
-                <button type="submit" class="btn btn-success w-100">Register Supplier</button>
-            </form>
-        </div>
-
         <!-- Employee List -->
-        <h3 class="text-center mt-5">Employee List</h3>
+        <h3 class="text-center mt-5">Employees</h3>
+        <button class="btn btn-primary mb-3" onclick="openModal('employeeModal')">Add Employee</button>
         <table class="table table-bordered">
-            <thead class="table-dark"><tr><th>ID</th><th>Name</th><th>Username</th><th>Role</th><th>Status</th><th>Phone</th></tr></thead>
-            <tbody><?php foreach ($employees as $employee): ?><tr><td><?php echo $employee['EmpID']; ?></td><td><?php echo $employee['EmpFName'] . ' ' . $employee['EmpLName']; ?></td><td><?php echo $employee['Username']; ?></td><td><?php echo $employee['Role']; ?></td><td><?php echo $employee['Status']; ?></td><td><?php echo $employee['Phone']; ?></td></tr><?php endforeach; ?></tbody>
+            <thead class="table-dark"><tr><th>ID</th><th>Name</th><th>Username</th><th>Role</th><th>Phone</th><th>Actions</th></tr></thead>
+            <tbody>
+                <?php foreach ($employees as $employee): ?>
+                    <tr>
+                        <td><?= $employee['EmpID'] ?></td>
+                        <td><?= $employee['EmpFName'] . ' ' . $employee['EmpLName'] ?></td>
+                        <td><?= $employee['Username'] ?></td>
+                        <td><?= $employee['Role'] ?></td>
+                        <td><?= $employee['Phone'] ?></td>
+                        <td>
+                            <button class="btn btn-warning btn-sm" onclick="editEmployee(<?= htmlspecialchars(json_encode($employee)) ?>)">Edit</button>
+                            <form method="POST" style="display:inline;">
+                                <input type="hidden" name="empID" value="<?= $employee['EmpID'] ?>">
+                                <button type="submit" name="delete_employee" class="btn btn-danger btn-sm">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
         </table>
 
         <!-- Supplier List -->
-        <h3 class="text-center mt-5">Supplier List</h3>
+        <h3 class="text-center mt-5">Suppliers</h3>
+        <button class="btn btn-success mb-3" onclick="openModal('supplierModal')">Add Supplier</button>
         <table class="table table-bordered">
-            <thead class="table-dark"><tr><th>ID</th><th>Name</th><th>Address</th><th>Phone</th></tr></thead>
-            <tbody><?php foreach ($suppliers as $supplier): ?><tr><td><?php echo $supplier['SupplierID']; ?></td><td><?php echo $supplier['SupplierName']; ?></td><td><?php echo $supplier['SupplierAddress']; ?></td><td><?php echo $supplier['SupplierNo']; ?></td></tr><?php endforeach; ?></tbody>
+            <thead class="table-dark"><tr><th>ID</th><th>Name</th><th>Address</th><th>Phone</th><th>Actions</th></tr></thead>
+            <tbody>
+                <?php foreach ($suppliers as $supplier): ?>
+                    <tr>
+                        <td><?= $supplier['SupplierID'] ?></td>
+                        <td><?= $supplier['SupplierName'] ?></td>
+                        <td><?= $supplier['SupplierAddress'] ?></td>
+                        <td><?= $supplier['SupplierNo'] ?></td>
+                        <td>
+                            <button class="btn btn-warning btn-sm" onclick="editSupplier(<?= htmlspecialchars(json_encode($supplier)) ?>)">Edit</button>
+                            <form method="POST" style="display:inline;">
+                                <input type="hidden" name="supplierID" value="<?= $supplier['SupplierID'] ?>">
+                                <button type="submit" name="delete_supplier" class="btn btn-danger btn-sm">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
         </table>
     </div>
 
