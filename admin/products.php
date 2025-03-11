@@ -6,19 +6,16 @@ include '../includes/db.php';
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_product'])) {
     $name = $_POST['name'];
     $category = $_POST['category'];
+    $unitType = isset($_POST['unitType']) ? $_POST['unitType'] : '';
     $unit = $_POST['unit'];
     $unitCost = $_POST['unitCost'];
     $price = $_POST['price'];
-
-    $sql = "CALL InsertProduct('$name', '$category', '$unit', $unitCost, $price)";
-    $conn->query($sql);
-}
-
-
-if (isset($_GET['delete'])) {
-    $id = $_GET['delete'];
-    $sql = "DELETE FROM Products WHERE ProductID=$id";
-    $conn->query($sql);
+    if (empty($unitType)) {
+        echo "Unit type is required.";
+    } else {
+        $sql = "CALL InsertProduct('$name', '$category', '$unitType', '$unit', $unitCost, $price)";
+        $conn->query($sql);
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -33,34 +30,74 @@ if (isset($_GET['delete'])) {
     <?php include '../includes/header_admin.php'; ?>
     <div class="container mt-5">
         <h2 class="text-center mb-4">Manage Products</h2>
-        <form method="POST" class="mb-4">
-            <div class="row">
-                <div class="col-md-3">
-                    <input type="text" class="form-control" name="name" placeholder="Product Name" required>
-                </div>
-                <div class="col-md-2">
-                    <input type="text" class="form-control" name="category" placeholder="Category" required>
-                </div>
-                <div class="col-md-2">
-                    <input type="text" class="form-control" name="unit" placeholder="Unit of Measurement" required>
-                </div>
-                <div class="col-md-2">
-                    <input type="number" class="form-control" name="unitCost" placeholder="Unit Cost" step="0.01" required>
-                </div>
-                <div class="col-md-2">
-                    <input type="number" class="form-control" name="price" placeholder="Price" step="0.01" required>
-                </div>
-                <div class="col-md-1">
-                    <button type="submit" name="add_product" class="btn btn-success w-100">Add</button>
+
+        <!-- Button to trigger modal -->
+        <button class="btn btn-primary mb-4" data-bs-toggle="modal" data-bs-target="#addProductModal">Add Product</button>
+
+        <!-- Modal -->
+        <div class="modal fade" id="addProductModal" tabindex="-1" aria-labelledby="addProductModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addProductModalLabel">Add New Product</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form method="POST">
+                            <div class="mb-3">
+                                <label for="productName" class="form-label">Product Name</label>
+                                <input type="text" class="form-control" id="productName" name="name" placeholder="Product Name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="category" class="form-label">Category</label>
+                                <select class="form-select" id="category" name="category" required>
+                                    <option value="" disabled selected>Select Category</option>
+                                    <option value="Household Materials">Household Materials</option>
+                                    <option value="Construction Supplies">Construction Supplies</option>
+                                    <option value="Equipment">Equipment</option>
+                                </select>
+                            </div>
+                            <!-- Unit Type Dropdown -->
+                            <div class="mb-3">
+                                <label for="unitType" class="form-label">Unit of Measurement Type</label>
+                                <select class="form-select" id="unitType" name="unitType" required onchange="toggleUnitInput()">
+                                    <option value="" disabled selected>Select Measurement Type</option>
+                                    <option value="Quantity">Quantity</option>
+                                    <option value="Weight">Weight</option>
+                                </select>
+                            </div>
+
+                            <!-- Unit Measurement Input (visible depending on the selected unit type) -->
+                            <div class="mb-3" id="unitInputContainer" style="display:none;">
+                                <label for="unit" class="form-label">Unit (e.g., pcs, kg)</label>
+                                <input type="text" class="form-control" id="unit" name="unit" placeholder="Unit of Measurement (e.g., pcs, kg)" required>
+                            </div>
+
+                            <!-- Unit Cost Input -->
+                            <div class="mb-3">
+                                <label for="unitCost" class="form-label">Unit Cost</label>
+                                <input type="number" class="form-control" id="unitCost" name="unitCost" placeholder="Unit Cost" step="0.01" required>
+                            </div>
+
+                            <!-- Price Input -->
+                            <div class="mb-3">
+                                <label for="price" class="form-label">Price</label>
+                                <input type="number" class="form-control" id="price" name="price" placeholder="Price" step="0.01" required>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
-        </form>
+        </div>
+
+        <!-- Product List Table -->
         <table class="table table-bordered">
             <thead>
                 <tr>
                     <th>ID</th>
                     <th>Name</th>
                     <th>Category</th>
+                    <th>Unit Type</th>
                     <th>Unit</th>
                     <th>Unit Cost</th>
                     <th>Price</th>
@@ -69,6 +106,7 @@ if (isset($_GET['delete'])) {
             </thead>
             <tbody>
                 <?php
+                // Fetch products from the database
                 $sql = "SELECT * FROM Products";
                 $result = $conn->query($sql);
                 while ($row = $result->fetch_assoc()):
@@ -77,6 +115,7 @@ if (isset($_GET['delete'])) {
                         <td><?php echo $row['ProductID']; ?></td>
                         <td><?php echo $row['ProductName']; ?></td>
                         <td><?php echo $row['ProductCategory']; ?></td>
+                        <td><?php echo $row['unitType']; ?></td>
                         <td><?php echo $row['UnitofMeasurement']; ?></td>
                         <td>₱<?php echo number_format($row['UnitCost'], 2); ?></td>
                         <td>₱<?php echo number_format($row['Price'], 2); ?></td>
@@ -90,5 +129,49 @@ if (isset($_GET['delete'])) {
         </table>
     </div>
     <?php include '../includes/footer.php'; ?>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    function toggleUnitInput() {
+        const unitType = document.getElementById('unitType').value;
+        const unitInputContainer = document.getElementById('unitInputContainer');
+        const unitInput = document.getElementById('unit');
+
+        if (unitType === 'Quantity') {
+            unitInputContainer.style.display = 'block';
+            unitInput.type = 'number';  // Quantity should only accept integers
+            unitInput.placeholder = 'Enter quantity (e.g., 10)';
+        } else if (unitType === 'Weight') {
+            unitInputContainer.style.display = 'block';
+            unitInput.type = 'number';  // Weight should accept decimals
+            unitInput.placeholder = 'Enter weight (e.g., 10.5)';
+        } else {
+            unitInputContainer.style.display = 'none';
+        }
+    }
+
+    // Validate on form submission
+    document.querySelector('form').addEventListener('submit', function(event) {
+        const unitType = document.getElementById('unitType').value;
+        const unitInput = document.getElementById('unit').value;
+
+        if (unitType === 'Quantity') {
+            // Ensure only integers are entered
+            if (!Number.isInteger(parseFloat(unitInput)) || parseFloat(unitInput) <= 0) {
+                alert("Please enter a valid quantity (integer).");
+                event.preventDefault();  // Prevent form submission
+            }
+        } else if (unitType === 'Weight') {
+            // Ensure a valid decimal number is entered and append "kg"
+            if (isNaN(unitInput) || parseFloat(unitInput) <= 0) {
+                alert("Please enter a valid weight (decimal number).");
+                event.preventDefault();  // Prevent form submission
+            } else {
+                // Append "kg" to the unit for weight
+                document.getElementById('unit').value = unitInput + " kg";
+            }
+        }
+    });
+</script>
 </body>
 </html>
