@@ -10,46 +10,72 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     echo "Input: $input<br>";
     echo "Password from form: $password<br>";
 
-// Check if the user is an admin or employee (using username)
-$sql = "SELECT * FROM Employee WHERE Username = ?";
-$stmt = $conn->prepare($sql);
-$stmt->bind_param("s", $input);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-    $row = $result->fetch_assoc();
-    echo "Employee/Admin found: " . $row['Username'] . "<br>"; // Debugging
-    echo "Password from DB: " . $row['Password'] . "<br>"; // Debugging
-    echo "Role: " . $row['EmpPos'] . "<br>"; // Debugging
-
-    // Compare plain text passwords
-    if ($password === $row['Password']) {
-        $_SESSION['user'] = $row['Username'];
-        $_SESSION['role'] = $row['EmpPos']; // Store the role (Admin or Employee)
-        $_SESSION['empID'] = $row['EmpID']; // Store the employee ID in the session
-
-        // Debugging: Print session variables
-        echo "Session role: " . $_SESSION['role'] . "<br>"; // Debugging
-
-        // Redirect based on role
-        if ($_SESSION['role'] == 'Admin') {
-            echo "Redirecting to admin dashboard...<br>"; // Debugging
-            header('Location: admin/dashboard.php');
+    // Check if the user is a customer (using email)
+    $sql = "SELECT CustomerName, Email, Password FROM CustomerAccount WHERE Email = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("s", $input);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows > 0) {
+        // Customer found
+        $row = $result->fetch_assoc();
+        echo "Customer found: " . $row['CustomerName'] . "<br>"; // Debugging
+        echo "Email from DB: " . $row['Email'] . "<br>"; // Debugging
+        echo "Password from DB: " . $row['Password'] . "<br>"; // Debugging
+    
+        // Compare plain text passwords
+        if ($password === $row['Password']) {
+            $_SESSION['customer'] = $row['CustomerName'];
+            $_SESSION['customerEmail'] = $row['Email']; // Store email in session
+            header('Location: index.php');
             exit();
         } else {
-            echo "Redirecting to employee dashboard...<br>"; // Debugging
-            header('Location: employee/dashboard.php');
-            exit();
+            echo "Customer password mismatch.<br>"; // Debugging
         }
     } else {
-        echo "Employee/Admin password mismatch.<br>"; // Debugging
-    }
-}
+        // If not a customer, check if the user is an admin or employee (using username)
+        $sql = "SELECT Username, Password, EmpPos, EmpID FROM Employee WHERE Username = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("s", $input);
+        $stmt->execute();
+        $result = $stmt->get_result();
+    
+        if ($result->num_rows > 0) {
+            // Employee/Admin found
+            $row = $result->fetch_assoc();
+            echo "Employee/Admin found: " . $row['Username'] . "<br>"; // Debugging
+            echo "Password from DB: " . $row['Password'] . "<br>"; // Debugging
+            echo "Role: " . $row['EmpPos'] . "<br>"; // Debugging
 
-    // If neither customer nor employee/admin is found, show an error
-    $error = "Invalid email/username or password!";
-    echo $error; // Debugging
+            // Compare plain text passwords
+            if ($password === $row['Password']) {
+                $_SESSION['user'] = $row['Username'];
+                $_SESSION['role'] = $row['EmpPos']; // Store the role (Admin or Employee)
+                $_SESSION['empID'] = $row['EmpID']; // Store the employee ID in the session
+
+                // Debugging: Print session variables
+                echo "Session role: " . $_SESSION['role'] . "<br>"; // Debugging
+
+                // Redirect based on role
+                if ($_SESSION['role'] == 'Admin') {
+                    echo "Redirecting to admin dashboard...<br>"; // Debugging
+                    header('Location: admin/dashboard.php');
+                    exit();
+                } else {
+                    echo "Redirecting to employee dashboard...<br>"; // Debugging
+                    header('Location: employee/dashboard.php');
+                    exit();
+                }
+            } else {
+                echo "Employee/Admin password mismatch.<br>"; // Debugging
+            }
+        } else {
+            // If neither customer nor employee/admin is found, show an error
+            $error = "Invalid email/username or password!";
+            echo $error; // Debugging
+        }
+    }
 }
 ?>
 <!DOCTYPE html>

@@ -5,9 +5,12 @@ include 'includes/db.php';
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $name = $_POST['name'];
     $email = $_POST['email'];
-    $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+    $password = $_POST['password']; // Plain text password
 
-    // Insert customer into the CustomerAccount table
+    // Debugging: Print the plain text password
+    echo "Plain text password: " . $password . "<br>";
+
+    // Insert customer into the CustomerAccount table with plain text password
     $sql = "INSERT INTO CustomerAccount (CustomerName, Email, Password) VALUES ('$name', '$email', '$password')";
     if ($conn->query($sql)) {
         $_SESSION['customer'] = $name;
