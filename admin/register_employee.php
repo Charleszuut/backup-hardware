@@ -35,17 +35,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_employee'])) {
     $empFName = $_POST['empFName'];
     $empLName = $_POST['empLName'];
     $username = $_POST['username'];
-    $password = $_POST['password'];
+    $password = $_POST['password']; // Plain text password
     $role = $_POST['role'];
     $phone = $_POST['phone'];
     $isActive = $_POST['isActive'];
     $empPos = 'Employee';
-    
-    $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
+
+    // Use plain text password directly
+    $plainPassword = $password;
 
     // Add Employee
     $stmt = $conn->prepare("CALL InsertEmployee(?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param("ssssssisi", $empFName, $empLName, $empPos, $username, $hashedPassword, $role, $phone, $isActive, $_SESSION['user_id']);
+    $stmt->bind_param("ssssssisi", $empFName, $empLName, $empPos, $username, $plainPassword, $role, $phone, $isActive, $_SESSION['user_id']);
     
     if ($stmt->execute()) {
         $success = "Employee added successfully!";
@@ -54,7 +55,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_employee'])) {
     }
     $stmt->close();
 }
-
 // Update Employee
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['edit_employee'])) {
     $empID = $_POST['empID'];
