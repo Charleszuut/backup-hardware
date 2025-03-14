@@ -48,8 +48,10 @@ include '../includes/db.php';
                             <td>₱<?php echo number_format($row['TotalPrice'], 2); ?></td>
                             <td><?php echo $row['Status']; ?></td>
                             <td>
-                                <a href="update_order.php?id=<?php echo $row['PurchaseOrderID']; ?>" class="btn btn-warning btn-sm">Update</a>
-                                <a href="delete_order.php?id=<?php echo $row['PurchaseOrderID']; ?>" class="btn btn-danger btn-sm">Delete</a>
+                            <td>
+                                <a href="employee/update_order.php?id=<?php echo $row['PurchaseOrderID']; ?>" class="btn btn-warning btn-sm">Update</a>
+                                <a href="employee/delete_order.php?id=<?php echo $row['PurchaseOrderID']; ?>" class="btn btn-danger btn-sm">Delete</a>
+                            </td>
                             </td>
                         </tr>
                 <?php

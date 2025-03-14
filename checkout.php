@@ -38,39 +38,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             // Insert purchase order lines
             foreach ($_SESSION['cart'] as $item) {
                 $product_id = $item['product_id'];
-                $product_name = $item['product_name'];
-                $quantity = $item['quantity'];
-                $unit_price = $item['price'];
-                $total_item_price = $unit_price * $quantity;
+                $quantity = $item['quantity']; // Get quantity from the cart item
+                $unit_price = $item['price']; // Get unit price from the cart item
+                $total_item_price = $unit_price * $quantity; // Calculate total price for the item
                 $supplierid = isset($item['supplierid']) ? $item['supplierid'] : null;
 
-                // Check if ProductID exists in the Products table
-                $check_sql = "SELECT ProductID FROM Products WHERE ProductID = ?";
+                if ($supplierid === null) {
+                    die("Error: SupplierID is missing for ProductID $product_id.");
+                }
+
+                // Check if SupplierID exists in the supplier table
+                $check_sql = "SELECT SupplierID FROM supplier WHERE SupplierID = ?";
                 $check_stmt = $conn->prepare($check_sql);
-                $check_stmt->bind_param("i", $product_id);
+                $check_stmt->bind_param("i", $supplierid);
                 $check_stmt->execute();
                 $check_stmt->store_result();
 
                 if ($check_stmt->num_rows == 0) {
-                    error_log("Invalid ProductID: $product_id");
-                    die("Error: ProductID $product_id does not exist in the Products table.");
-                }
-
-                // Check if SupplierID exists in the supplier table
-                if ($supplierid !== null) {
-                    $check_sql = "SELECT SupplierID FROM supplier WHERE SupplierID = ?";
-                    $check_stmt = $conn->prepare($check_sql);
-                    $check_stmt->bind_param("i", $supplierid);
-                    $check_stmt->execute();
-                    $check_stmt->store_result();
-
-                    if ($check_stmt->num_rows == 0) {
-                        error_log("Invalid SupplierID: $supplierid for ProductID: $product_id");
-                        die("Error: SupplierID $supplierid does not exist in the supplier table for ProductID $product_id.");
-                    }
-                } else {
-                    error_log("Missing SupplierID for ProductID: $product_id");
-                    die("Error: SupplierID is missing for ProductID $product_id.");
+                    die("Error: SupplierID $supplierid does not exist in the supplier table for ProductID $product_id.");
                 }
 
                 // Insert into PurchaseOrderLine
