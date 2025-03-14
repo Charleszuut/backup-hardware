@@ -24,6 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     if ($stmt->execute()) {
         $customer_id = $stmt->insert_id;
+        $stmt->close();
 
         // Calculate total price
         $total_price = 0;
@@ -31,32 +32,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $total_price += $item['price'] * $item['quantity'];
         }
 
-        // Insert purchase order with additional fields
-        $created_date = date('Y-m-d H:i:s'); // Current timestamp
-        $payment_status = 'Pending'; // Default value
-        $notes = ''; // Default value or from form input
+        // Insert purchase order
+        $created_date = date('Y-m-d H:i:s');
+        $payment_status = 'Pending';
+        $notes = '';
 
-        $sql = "INSERT INTO PurchaseOrder (CustomerID, ProductName, OrderQuantity, CustomerAddress, TotalPrice, Status, CreatedDate, PaymentStatus, Notes) 
-        VALUES (?, ?, ?, ?, ?, 'Pending', ?, ?, ?)";
-        
+        $sql = "INSERT INTO PurchaseOrder (CustomerID, CustomerAddress, TotalPrice, Status, CreatedDate, PaymentStatus, Notes) 
+                VALUES (?, ?, ?, 'Pending', ?, ?, ?)";
         $stmt = $conn->prepare($sql);
         if (!$stmt) {
             error_log("Failed to prepare statement for PurchaseOrder insert: " . $conn->error);
             die("Error preparing statement: " . $conn->error);
         }
-
-        // Corrected bind_param with the correct number of parameters and types
-        $stmt->bind_param("isssdsss", $customer_id, $product_name, $order_quantity, $customer_address, $total_price, $created_date, $payment_status, $notes);
-
-        if (!$stmt->execute()) {
-            error_log("Failed to execute PurchaseOrder insert: " . $stmt->error);
-            die("Error executing statement: " . $stmt->error);
-        }
-
-        $stmt->close();
+        $stmt->bind_param("ssdsss", $customer_id, $customer_address, $total_price, $created_date, $payment_status, $notes);
 
         if ($stmt->execute()) {
             $purchase_order_id = $stmt->insert_id;
+            $stmt->close();
 
             // Insert purchase order lines
             foreach ($_SESSION['cart'] as $item) {
@@ -66,73 +58,50 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $total_item_price = $unit_price * $quantity;
                 $supplierid = isset($item['supplierid']) ? $item['supplierid'] : null;
 
-                // Log the cart item for debugging
-                error_log("Cart Item: " . print_r($item, true));
-
-                // Validate SupplierID
                 if ($supplierid === null || !is_numeric($supplierid) || $supplierid <= 0) {
                     error_log("Invalid SupplierID for ProductID $product_id: " . var_export($supplierid, true));
                     die("Error: Invalid or missing SupplierID for ProductID $product_id.");
                 }
 
-                // Check if SupplierID exists in the supplier table
-                $check_sql = "SELECT SupplierID FROM supplier WHERE SupplierID = ?";
-                $check_stmt = $conn->prepare($check_sql);
-                if (!$check_stmt) {
-                    error_log("Failed to prepare statement for Supplier check: " . $conn->error);
-                    die("Error preparing statement: " . $conn->error);
-                }
+                // Check SupplierID
+                $check_stmt = $conn->prepare("SELECT SupplierID FROM supplier WHERE SupplierID = ?");
                 $check_stmt->bind_param("i", $supplierid);
                 $check_stmt->execute();
                 $check_stmt->store_result();
-
                 if ($check_stmt->num_rows == 0) {
-                    error_log("SupplierID $supplierid does not exist in the supplier table for ProductID $product_id.");
-                    die("Error: SupplierID $supplierid does not exist in the supplier table for ProductID $product_id.");
+                    error_log("SupplierID $supplierid does not exist.");
+                    die("Error: SupplierID $supplierid does not exist.");
                 }
                 $check_stmt->close();
 
-                // Check if ProductID exists in the Product table and fetch ProductName
-                $product_check_sql = "SELECT ProductName FROM Products WHERE ProductID = ?";
-                $product_check_stmt = $conn->prepare($product_check_sql);
-                if (!$product_check_stmt) {
-                    error_log("Failed to prepare statement for Product check: " . $conn->error);
-                    die("Error preparing statement: " . $conn->error);
+                // Check ProductID and get ProductName
+                $product_stmt = $conn->prepare("SELECT ProductName FROM Products WHERE ProductID = ?");
+                $product_stmt->bind_param("i", $product_id);
+                $product_stmt->execute();
+                $product_result = $product_stmt->get_result();
+                if ($product_result->num_rows == 0) {
+                    error_log("ProductID $product_id does not exist.");
+                    die("Error: ProductID $product_id does not exist.");
                 }
-                $product_check_stmt->bind_param("i", $product_id);
-                $product_check_stmt->execute();
-                $product_check_result = $product_check_stmt->get_result();
-
-                if ($product_check_result->num_rows == 0) {
-                    error_log("ProductID $product_id does not exist in the Product table.");
-                    die("Error: ProductID $product_id does not exist in the Product table.");
-                }
-
-                // Fetch the ProductName
-                $product = $product_check_result->fetch_assoc();
+                $product = $product_result->fetch_assoc();
                 $product_name = $product['ProductName'];
-                $product_check_stmt->close();
+                $product_stmt->close();
 
-                // Insert into PurchaseOrderLine with ProductName
-                $sql = "INSERT INTO PurchaseOrderLine (PurchaseOrderID, ProductID, Quantity, UnitPrice, TotalPrice, SupplierID, ProductName)
-                        VALUES (?, ?, ?, ?, ?, ?, ?)";
-                $stmt = $conn->prepare($sql);
-                if (!$stmt) {
-                    error_log("Failed to prepare statement for PurchaseOrderLine insert: " . $conn->error);
-                    die("Error preparing statement: " . $conn->error);
+                // Insert into PurchaseOrderLine
+                $line_stmt = $conn->prepare("INSERT INTO PurchaseOrderLine (PurchaseOrderID, ProductID, Quantity, UnitPrice, TotalPrice, SupplierID, ProductName) 
+                                             VALUES (?, ?, ?, ?, ?, ?, ?)");
+                $line_stmt->bind_param("iiiddis", $purchase_order_id, $product_id, $quantity, $unit_price, $total_item_price, $supplierid, $product_name);
+                if (!$line_stmt->execute()) {
+                    error_log("Failed to insert purchase order line: " . $line_stmt->error);
+                    die("Error inserting purchase order line: " . $line_stmt->error);
                 }
-                $stmt->bind_param("iiiddis", $purchase_order_id, $product_id, $quantity, $unit_price, $total_item_price, $supplierid, $product_name);
-
-                if (!$stmt->execute()) {
-                    error_log("Failed to insert purchase order line: " . $stmt->error);
-                    die("Error inserting purchase order line: " . $stmt->error);
-                }
-                $stmt->close();
+                $line_stmt->close();
             }
 
-            // Clear the cart
+            // Store CustomerID in session and clear the cart
+            $_SESSION['customer_id'] = $customer_id; // Store CustomerID for use in customer_transactions.php
             $_SESSION['cart'] = [];
-            header('Location: transactions.php');
+            header('Location: customer_transactions.php'); // Redirect to customer transactions page
             exit();
         } else {
             error_log("Failed to create purchase order: " . $stmt->error);

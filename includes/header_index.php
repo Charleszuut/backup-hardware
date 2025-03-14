@@ -1,3 +1,4 @@
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container">
         <a class="navbar-brand" href="index.php">Four A's Marketing Store</a>
@@ -13,6 +14,11 @@
                     <li class="nav-item">
                         <a class="nav-link" href="cart.php">
                             <i class="fas fa-shopping-cart"></i> Cart
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-purchases" href="customer_transactions.php">
+                            <i class="fas fa-shopping-cart"></i> My Purchases
                         </a>
                     </li>
                     <li class="nav-item">
