@@ -8,30 +8,26 @@ if (!isset($_SESSION['user'])) {
     exit();
 }
 
-// Get the current date
-$current_date = date('Y-m-d');
-
 // Handle sorting parameters
-$sort = isset($_GET['sort']) ? $_GET['sort'] : 'CreatedDate'; // Default sort by CreatedDate
-$order = isset($_GET['order']) && $_GET['order'] === 'asc' ? 'ASC' : 'DESC'; // Default to DESC
-$valid_sort_columns = ['PurchaseOrderID', 'CustomerName', 'TotalPrice', 'CreatedDate']; // Allowed columns for sorting
+$sort = isset($_GET['sort']) ? $_GET['sort'] : 'CreatedDate';
+$order = isset($_GET['order']) && $_GET['order'] === 'asc' ? 'ASC' : 'DESC';
+$valid_sort_columns = ['PurchaseOrderID', 'CustomerName', 'TotalPrice', 'CreatedDate'];
 
-// Ensure the sort column is valid
 if (!in_array($sort, $valid_sort_columns)) {
-    $sort = 'CreatedDate'; // Fallback to default if invalid
+    $sort = 'CreatedDate';
 }
 
-// Toggle order for the next click
 $next_order = $order === 'ASC' ? 'desc' : 'asc';
 
-// Fetch all transactions for the current day with dynamic ORDER BY
+// Check for success message
+$success = isset($_GET['success']) ? $_GET['success'] : '';
+
+// Fetch all transactions (no date filter)
 $sql = "SELECT po.PurchaseOrderID, po.CustomerID, c.CustomerName, po.OrderQuantity, po.ProductName, po.TotalPrice, po.CreatedDate, po.Status 
         FROM PurchaseOrder po 
         JOIN Customer c ON po.CustomerID = c.CustomerID 
-        WHERE DATE(po.CreatedDate) = ?
         ORDER BY $sort $order";
 $stmt = $conn->prepare($sql);
-$stmt->bind_param("s", $current_date);
 $stmt->execute();
 $result = $stmt->get_result();
 ?>
@@ -41,14 +37,23 @@ $result = $stmt->get_result();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Employee Transactions</title>
+    <title>All Transactions</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="../assets/css/style.css" rel="stylesheet">
 </head>
 <body>
     <?php include '../includes/header_employee.php'; ?>
     <div class="container mt-5">
-        <h2 class="text-center mb-4">Recent Transactions (Today: <?php echo $current_date; ?>)</h2>
+        <h2 class="text-center mb-4">All Transactions</h2>
+
+        <div class="text-center mb-4">
+            <a href="dashboard.php" class="btn btn-primary">Back to Dashboard</a>
+        </div>
+
+        <?php if ($success): ?>
+            <div class="alert alert-success"><?php echo htmlspecialchars($success); ?></div>
+        <?php endif; ?>
+
         <table class="table table-bordered">
             <thead class="table-dark">
                 <tr>
@@ -98,7 +103,7 @@ $result = $stmt->get_result();
                 <?php endwhile; ?>
                 <?php if ($result->num_rows == 0): ?>
                     <tr>
-                        <td colspan="9" class="text-center">No transactions found for today.</td>
+                        <td colspan="9" class="text-center">No transactions found in history.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>
