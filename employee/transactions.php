@@ -1,7 +1,7 @@
 <?php
 session_start();
-include '../includes/auth.php';
-include '../includes/db.php';
+include '../includes/auth.php'; // Navigate up to root, then into includes/
+include '../includes/db.php';   // Navigate up to root, then into includes/
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -10,10 +10,10 @@ include '../includes/db.php';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Employee Transactions</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="../assets/css/style.css" rel="stylesheet">
+    <link href="../assets/css/style.css" rel="stylesheet"> <!-- Adjusted path for CSS -->
 </head>
 <body>
-    <?php include '../includes/header_employee.php'; ?>
+    <?php include '../includes/header_employee.php'; ?> <!-- Navigate up to root, then into includes/ -->
     <div class="container mt-5">
         <h2 class="text-center mb-4">Employee Transactions</h2>
         <table class="table table-bordered">
@@ -31,10 +31,11 @@ include '../includes/db.php';
             <tbody>
                 <?php
                 // Fetch all purchase orders with customer and product details
-                $sql = "SELECT po.PurchaseOrderID, c.CustomerName, pol.ProductName, pol.Quantity, pol.TotalPrice, po.Status
+                $sql = "SELECT po.PurchaseOrderID, c.CustomerName, p.ProductName, pol.Quantity, pol.TotalPrice, po.Status
                         FROM PurchaseOrder po
                         JOIN Customer c ON po.CustomerID = c.CustomerID
-                        JOIN PurchaseOrderLine pol ON po.PurchaseOrderID = pol.PurchaseOrderID";
+                        JOIN PurchaseOrderLine pol ON po.PurchaseOrderID = pol.PurchaseOrderID
+                        JOIN Products p ON pol.ProductID = p.ProductID";
                 $result = $conn->query($sql);
 
                 if ($result->num_rows > 0) {
@@ -48,10 +49,8 @@ include '../includes/db.php';
                             <td>₱<?php echo number_format($row['TotalPrice'], 2); ?></td>
                             <td><?php echo $row['Status']; ?></td>
                             <td>
-                            <td>
-                                <a href="employee/update_order.php?id=<?php echo $row['PurchaseOrderID']; ?>" class="btn btn-warning btn-sm">Update</a>
-                                <a href="employee/delete_order.php?id=<?php echo $row['PurchaseOrderID']; ?>" class="btn btn-danger btn-sm">Delete</a>
-                            </td>
+                                <a href="update_order.php?id=<?php echo $row['PurchaseOrderID']; ?>" class="btn btn-warning btn-sm">Update</a>
+                                <a href="delete_order.php?id=<?php echo $row['PurchaseOrderID']; ?>" class="btn btn-danger btn-sm">Delete</a>
                             </td>
                         </tr>
                 <?php
@@ -63,6 +62,6 @@ include '../includes/db.php';
             </tbody>
         </table>
     </div>
-    <?php include '../includes/footer.php'; ?>
+    <?php include '../includes/footer.php'; ?> <!-- Adjusted path for footer -->
 </body>
 </html>
