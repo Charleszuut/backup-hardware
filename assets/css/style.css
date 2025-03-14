@@ -167,6 +167,7 @@ body {
     padding: 0.5rem 1rem;
     border-radius: 5px;
     transition: background-color 0.3s ease;
+    width: 100%;
 }
 
 .btn-add:hover {
@@ -201,4 +202,85 @@ body {
 
 .btn-update:hover {
     background-color: #0056b3;
+}
+.header-bg {
+    background-color: #007bff;
+    color: #fff;
+}
+.product-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+.card-img-top {
+    height: 200px;
+    object-fit: cover;
+    width: 100%;
+}
+.form-group {
+    margin-bottom: 1rem;
+}
+.btn-punch {
+    background-color: #28a745;
+    color: #fff;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+.btn-punch:hover {
+    background-color: #218838;
+    color: #fff;
+}
+.no-products {
+    font-size: 1.2rem;
+    color: #6c757d;
+}
+#product-grid .col {
+    display: flex;
+    flex-direction: column;
+}
+
+.product-card {
+    flex: 1 0 auto;
+    min-height: 400px;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card-img-top {
+    width: 100%;
+}
+
+.btn-punch {
+    width: 100%;
+}
+.punch-in-card {
+    background-color: #007bff; /* Blue background for emphasis */
+    color: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+.punch-in-card .card-title {
+    font-size: 1.75rem;
+    font-weight: bold;
+}
+.punch-in-card .btn {
+    background-color: #fff;
+    color: #007bff;
+    font-weight: bold;
+    border: none;
+}
+.punch-in-card .btn:hover {
+    background-color: #f8f9fa;
+}
+.secondary-card {
+    background-color: #f8f9fa;
+    border: 1px solid #ddd;
+}
+.secondary-card .card-title {
+    font-size: 1.25rem;
 }

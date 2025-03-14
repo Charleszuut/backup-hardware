@@ -17,35 +17,6 @@ if (!isset($_SESSION['user'])) {
     <title>Four A's Marketing (Employee)</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="../assets/css/style.css" rel="stylesheet">
-    <style>
-        .punch-in-card {
-            background-color: #007bff; /* Blue background for emphasis */
-            color: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-        .punch-in-card .card-title {
-            font-size: 1.75rem;
-            font-weight: bold;
-        }
-        .punch-in-card .btn {
-            background-color: #fff;
-            color: #007bff;
-            font-weight: bold;
-            border: none;
-        }
-        .punch-in-card .btn:hover {
-            background-color: #f8f9fa;
-        }
-        .secondary-card {
-            background-color: #f8f9fa;
-            border: 1px solid #ddd;
-        }
-        .secondary-card .card-title {
-            font-size: 1.25rem;
-        }
-    </style>
 </head>
 <body>
     <?php include '../includes/header_employee.php'; ?>
@@ -65,9 +36,9 @@ if (!isset($_SESSION['user'])) {
             </div>
         </div>
 
-        <!-- Secondary Options (Transactions and History) -->
+        <!-- Secondary Options (Transactions, History, and Recent Transactions) -->
         <div class="row">
-            <div class="col-md-6">
+            <div class="col-md-4">
                 <div class="card secondary-card">
                     <div class="card-body">
                         <h5 class="card-title">View Transactions</h5>
@@ -76,12 +47,21 @@ if (!isset($_SESSION['user'])) {
                     </div>
                 </div>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
                 <div class="card secondary-card">
                     <div class="card-body">
                         <h5 class="card-title">View History</h5>
                         <p class="card-text">View completed transactions.</p>
-                        <a href="history.php" class="btn btn-primary">Go to History</a>
+                        <a href="checkinout.php" class="btn btn-primary">Go to History</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card secondary-card">
+                    <div class="card-body">
+                        <h5 class="card-title">Recent Transactions</h5>
+                        <p class="card-text">View today's walk-in transactions.</p>
+                        <a href="employee_transactions.php" class="btn btn-primary">Go to Recent Transactions</a>
                     </div>
                 </div>
             </div>
