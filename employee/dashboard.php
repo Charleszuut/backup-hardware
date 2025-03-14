@@ -50,9 +50,9 @@ if (!isset($_SESSION['user'])) {
             <div class="col-md-4">
                 <div class="card secondary-card">
                     <div class="card-body">
-                        <h5 class="card-title">View History</h5>
-                        <p class="card-text">View completed transactions.</p>
-                        <a href="checkinout.php" class="btn btn-primary">Go to History</a>
+                        <h5 class="card-title">Employee Check-in/out</h5>
+                        <p class="card-text">View Employee attendance.</p>
+                        <a href="checkinout.php" class="btn btn-primary">Go to Check-in/out</a>
                     </div>
                 </div>
             </div>
