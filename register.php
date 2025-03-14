@@ -3,25 +3,53 @@ session_start();
 include 'includes/db.php';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $name = $_POST['name'];
-    $email = $_POST['email'];
+    $name = htmlspecialchars($_POST['name']);
+    $email = htmlspecialchars($_POST['email']);
     $password = $_POST['password']; // Plain text password
+    $confirm_password = $_POST['confirm_password'];
 
     // Debugging: Print the plain text password
     echo "Plain text password: " . $password . "<br>";
 
-    // Insert customer into the CustomerAccount table with plain text password
-    $sql = "INSERT INTO CustomerAccount (CustomerName, Email, Password) VALUES ('$name', '$email', '$password')";
-    if ($conn->query($sql)) {
-        $_SESSION['customer'] = $name;
-        $_SESSION['customerAccountID'] = $conn->insert_id; // Store the customer account ID in the session
-        header('Location: index.php');
-        exit();
-    } else {
-        $error = "Registration failed: " . $conn->error;
+    // Validation
+    $errors = [];
+
+    // Check if email already exists
+    $check_sql = "SELECT CustomerAccountID FROM customeraccount WHERE Email = ?";
+    $check_stmt = $conn->prepare($check_sql);
+    $check_stmt->bind_param("s", $email);
+    $check_stmt->execute();
+    $check_result = $check_stmt->get_result();
+    if ($check_result->num_rows > 0) {
+        $errors[] = "Email already exists.";
+    }
+    $check_stmt->close();
+
+    // Validate password
+    if ($password !== $confirm_password) {
+        $errors[] = "Passwords do not match.";
+    }
+
+    if (empty($errors)) {
+        // Insert customer into the customeraccount table with plain text password
+        $sql = "INSERT INTO customeraccount (CustomerName, Email, Password) VALUES (?, ?, ?)";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("sss", $name, $email, $password);
+
+        if ($stmt->execute()) {
+            // Set session variables
+            $_SESSION['customer'] = $name;
+            $_SESSION['customer_id'] = $stmt->insert_id; // Use customer_id to match other scripts
+            header('Location: index.php');
+            exit();
+        } else {
+            $error = "Registration failed: " . $stmt->error;
+        }
+        $stmt->close();
     }
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -40,6 +68,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         <h3 class="text-center">Register</h3>
                     </div>
                     <div class="card-body">
+                        <?php if (isset($errors) && !empty($errors)): ?>
+                            <div class="alert alert-danger">
+                                <?php foreach ($errors as $error): ?>
+                                    <p><?php echo $error; ?></p>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
                         <?php if (isset($error)): ?>
                             <div class="alert alert-danger"><?php echo $error; ?></div>
                         <?php endif; ?>
@@ -55,6 +90,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                             <div class="mb-3">
                                 <label for="password" class="form-label">Password</label>
                                 <input type="password" class="form-control" id="password" name="password" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="confirm_password" class="form-label">Confirm Password</label>
+                                <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
                             </div>
                             <button type="submit" class="btn btn-primary w-100">Register</button>
                         </form>

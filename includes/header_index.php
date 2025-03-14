@@ -9,7 +9,7 @@
             <ul class="navbar-nav ms-auto">
                 <?php if (isset($_SESSION['customer'])): ?>
                     <li class="nav-item">
-                        <span class="nav-link"><?php echo $_SESSION['customer']; ?></span>
+                        <a class="nav-link" href="account_settings.php"><?php echo $_SESSION['customer']; ?></a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="cart.php">
