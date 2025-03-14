@@ -63,7 +63,7 @@ if (!$purchase_result) {
     <?php include '../includes/header_admin.php'; ?>
     <div class="container mt-5">
         <!-- Products Added from Supplier -->
-        <h3 class="section-title text-center">Products Added from Supplier</h3>
+        <h3 class="section-title text-center">Products Bought from the Suppliers</h3>
         <table class="table table-bordered table-striped">
             <thead class="table-dark">
                 <tr>
