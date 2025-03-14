@@ -1,8 +1,41 @@
 <?php
 session_start();
-include '../includes/auth.php'; // Navigate up to root, then into includes/
-include '../includes/db.php';   // Navigate up to root, then into includes/
+include '../includes/auth.php';
+include '../includes/db.php';
+
+if (!isset($_SESSION['user'])) {
+    header('Location: ../login.php');
+    exit();
+}
+
+// Get the current date
+$current_date = date('Y-m-d');
+
+// Handle sorting parameters
+$sort = isset($_GET['sort']) ? $_GET['sort'] : 'CreatedDate'; // Default sort by CreatedDate
+$order = isset($_GET['order']) && $_GET['order'] === 'asc' ? 'ASC' : 'DESC'; // Default to DESC
+$valid_sort_columns = ['PurchaseOrderID', 'CustomerName', 'TotalPrice', 'CreatedDate']; // Allowed columns for sorting
+
+// Ensure the sort column is valid
+if (!in_array($sort, $valid_sort_columns)) {
+    $sort = 'CreatedDate'; // Fallback to default if invalid
+}
+
+// Toggle order for the next click
+$next_order = $order === 'ASC' ? 'desc' : 'asc';
+
+// Fetch all transactions for the current day with dynamic ORDER BY
+$sql = "SELECT po.PurchaseOrderID, po.CustomerID, c.CustomerName, po.OrderQuantity, po.ProductName, po.TotalPrice, po.CreatedDate, po.Status 
+        FROM PurchaseOrder po 
+        JOIN Customer c ON po.CustomerID = c.CustomerID 
+        WHERE DATE(po.CreatedDate) = ?
+        ORDER BY $sort $order";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("s", $current_date);
+$stmt->execute();
+$result = $stmt->get_result();
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,58 +43,72 @@ include '../includes/db.php';   // Navigate up to root, then into includes/
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Employee Transactions</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="../assets/css/style.css" rel="stylesheet"> <!-- Adjusted path for CSS -->
+    <link href="../assets/css/style.css" rel="stylesheet">
 </head>
 <body>
-    <?php include '../includes/header_employee.php'; ?> <!-- Navigate up to root, then into includes/ -->
+    <?php include '../includes/header_employee.php'; ?>
     <div class="container mt-5">
-        <h2 class="text-center mb-4">Employee Transactions</h2>
+        <h2 class="text-center mb-4">Recent Transactions (Today: <?php echo $current_date; ?>)</h2>
         <table class="table table-bordered">
-            <thead>
+            <thead class="table-dark">
                 <tr>
-                    <th>ID</th>
-                    <th>Customer</th>
-                    <th>Product</th>
-                    <th>Quantity</th>
-                    <th>Total</th>
+                    <th>
+                        <a href="?sort=PurchaseOrderID&order=<?php echo $sort === 'PurchaseOrderID' ? $next_order : 'asc'; ?>" class="text-white text-decoration-none">
+                            Order ID <?php echo $sort === 'PurchaseOrderID' ? ($order === 'ASC' ? '↑' : '↓') : ''; ?>
+                        </a>
+                    </th>
+                    <th>Customer ID</th>
+                    <th>
+                        <a href="?sort=CustomerName&order=<?php echo $sort === 'CustomerName' ? $next_order : 'asc'; ?>" class="text-white text-decoration-none">
+                            Customer Name <?php echo $sort === 'CustomerName' ? ($order === 'ASC' ? '↑' : '↓') : ''; ?>
+                        </a>
+                    </th>
+                    <th>Order Quantity</th>
+                    <th>Products</th>
+                    <th>
+                        <a href="?sort=TotalPrice&order=<?php echo $sort === 'TotalPrice' ? $next_order : 'asc'; ?>" class="text-white text-decoration-none">
+                            Total Price <?php echo $sort === 'TotalPrice' ? ($order === 'ASC' ? '↑' : '↓') : ''; ?>
+                        </a>
+                    </th>
+                    <th>
+                        <a href="?sort=CreatedDate&order=<?php echo $sort === 'CreatedDate' ? $next_order : 'asc'; ?>" class="text-white text-decoration-none">
+                            Created Date <?php echo $sort === 'CreatedDate' ? ($order === 'ASC' ? '↑' : '↓') : ''; ?>
+                        </a>
+                    </th>
                     <th>Status</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
-                <?php
-                // Fetch all purchase orders with customer and product details
-                $sql = "SELECT po.PurchaseOrderID, c.CustomerName, p.ProductName, pol.Quantity, pol.TotalPrice, po.Status
-                        FROM PurchaseOrder po
-                        JOIN Customer c ON po.CustomerID = c.CustomerID
-                        JOIN PurchaseOrderLine pol ON po.PurchaseOrderID = pol.PurchaseOrderID
-                        JOIN Products p ON pol.ProductID = p.ProductID";
-                $result = $conn->query($sql);
-
-                if ($result->num_rows > 0) {
-                    while ($row = $result->fetch_assoc()):
-                ?>
-                        <tr>
-                            <td><?php echo $row['PurchaseOrderID']; ?></td>
-                            <td><?php echo $row['CustomerName']; ?></td>
-                            <td><?php echo $row['ProductName']; ?></td>
-                            <td><?php echo $row['Quantity']; ?></td>
-                            <td>₱<?php echo number_format($row['TotalPrice'], 2); ?></td>
-                            <td><?php echo $row['Status']; ?></td>
-                            <td>
-                                <a href="update_order.php?id=<?php echo $row['PurchaseOrderID']; ?>" class="btn btn-warning btn-sm">Update</a>
-                                <a href="delete_order.php?id=<?php echo $row['PurchaseOrderID']; ?>" class="btn btn-danger btn-sm">Delete</a>
-                            </td>
-                        </tr>
-                <?php
-                    endwhile;
-                } else {
-                    echo "<tr><td colspan='7' class='text-center'>No transactions found.</td></tr>";
-                }
-                ?>
+                <?php while ($row = $result->fetch_assoc()): ?>
+                    <tr>
+                        <td><?php echo $row['PurchaseOrderID']; ?></td>
+                        <td><?php echo $row['CustomerID']; ?></td>
+                        <td><?php echo htmlspecialchars($row['CustomerName']); ?></td>
+                        <td><?php echo $row['OrderQuantity']; ?></td>
+                        <td><?php echo htmlspecialchars($row['ProductName']); ?></td>
+                        <td>₱<?php echo number_format($row['TotalPrice'], 2); ?></td>
+                        <td><?php echo $row['CreatedDate']; ?></td>
+                        <td><?php echo $row['Status']; ?></td>
+                        <td>
+                            <a href="update_order.php?id=<?php echo $row['PurchaseOrderID']; ?>" class="btn btn-warning btn-sm">Edit</a>
+                            <a href="delete_order.php?id=<?php echo $row['PurchaseOrderID']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this order?');">Delete</a>
+                        </td>
+                    </tr>
+                <?php endwhile; ?>
+                <?php if ($result->num_rows == 0): ?>
+                    <tr>
+                        <td colspan="9" class="text-center">No transactions found for today.</td>
+                    </tr>
+                <?php endif; ?>
             </tbody>
         </table>
     </div>
-    <?php include '../includes/footer.php'; ?> <!-- Adjusted path for footer -->
+    <?php include '../includes/footer.php'; ?>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+<?php
+$stmt->close();
+$conn->close();
+?>
